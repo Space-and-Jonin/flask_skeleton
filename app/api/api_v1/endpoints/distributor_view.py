@@ -28,7 +28,7 @@ distributor_controller = obj_graph.provide(DistributorController)
 
 @distributor.route("/", methods=["POST"])
 @validator(schema=DistributorCreateSchema)
-@auth_role()
+# @auth_role()
 def create_distributor():
     """
     ---
