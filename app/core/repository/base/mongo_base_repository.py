@@ -1,6 +1,6 @@
 import mongoengine
-from app.core.exceptions.app_exceptions import AppException
-from app.core.repository.base.crud_repository_interface import (
+from ...exceptions.app_exceptions import AppException
+from ...repository.base.crud_repository_interface import (
     CRUDRepositoryInterface,
 )
 

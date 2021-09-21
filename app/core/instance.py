@@ -62,7 +62,7 @@ def initialize_instance(app: Flask):
 
 def register_extensions(flask_app):
     """Register Flask extensions."""
-    # from app.core.factory import factory
+    from .factory import factory
 
     if flask_app.config["DB_ENGINE"] == "MONGODB":
         me = MongoEngine()
@@ -72,7 +72,7 @@ def register_extensions(flask_app):
         migrate.init_app(flask_app, db)
         with flask_app.app_context():
             db.create_all()
-    # factory.init_app(flask_app, db)
+    factory.init_app(flask_app, db)
     ma.init_app(flask_app)
 
     @flask_app.errorhandler(HTTPException)
