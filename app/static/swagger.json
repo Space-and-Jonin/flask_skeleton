@@ -1,0 +1,16 @@
+{
+    "info": {
+    "description": "This is a boilerplate project",
+    "version": "1.0.0",
+    "title": "App Boilerplate",
+    "contact": {
+      "email": "jarhin@quantumgroup.com"
+    },
+    "license": {
+      "name": "MIT",
+      "url": "https://opensource.org/licenses/MIT"
+    }
+  },
+    "swagger": "2.0",
+    "paths": {}
+}
