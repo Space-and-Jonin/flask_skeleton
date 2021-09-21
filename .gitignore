@@ -146,3 +146,9 @@ cython_debug/
 
 # Containers
 .devcontainer
+
+# tests
+app/
+config.py
+test.db
+tests/
