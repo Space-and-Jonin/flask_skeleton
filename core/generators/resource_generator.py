@@ -12,38 +12,178 @@ def init_generators(app: Flask):
     @gen_cli.command("repository")
     @click.argument("name")
     def generate_repository(name: str):
-        create_repository(name)
+        create_repository(app, name)
 
     @gen_cli.command("model")
     @click.argument("name")
-    def generate_model(name: str):
-        create_model(name)
+    @click.option("--repository", "-r", "repo", is_flag=True)
+    @click.option("--controller", "-c", "controller", is_flag=True)
+    @click.option("--all", "-a", "all", is_flag=True)
+    def generate_model(name: str, repo, controller, all):
+        create_model(app, name)
+
+        # TODO: refactor this line
+
+        if all:
+            create_repository(app, f"{name}_repository")
+            create_controller(app, f"{name}_controller")
+        else:
+            if repo:
+                create_repository(app, f"{name}_repository")
+
+            if controller:
+                create_controller(app, f"{name}_controller")
 
     @gen_cli.command("controller")
     @click.argument("name")
     def generate_controller(name: str):
-        create_controller(name)
+        create_controller(app, name)
 
-    def create_controller(name):
-        file_dir = os.path.join(app.root_path, "controllers")
-        root_dir_name = os.path.basename(app.root_path)
-        if not os.path.exists(file_dir):
-            pathlib.Path(file_dir).mkdir(parents=True, exist_ok=True)
-        file_name = f"{name}_controller.py"
-        model_name = name.capitalize()
-        repository_file_name = f"{name}_repository"
-        repository_class_name = f"{model_name}Repository"
+    app.cli.add_command(gen_cli)
 
-        template_details = {
-            "repository_file_name": repository_file_name,
-            "repository_class_name": repository_class_name,
-            "root_dir_name": root_dir_name,
-            "model_name": model_name,
-        }
-        template_string = """from {{root_dir_name}}.repositories.{{repository_file_name}} import {{repository_class_name}}
-from core import Result
 
-class {{model_name}}Controller:
+def add_to_init(dir_path, file_name, class_name):
+    with open(os.path.join(dir_path, "__init__.py"), "a") as w:
+        w.write(f"from .{file_name} import {class_name}\n")
+
+
+def convert_to_camelcase(string: str):
+    """
+    Algorithm to convert snake_case to CamelCase
+    """
+    s = list(string)
+
+    if s[-1] == "_":
+        s[-1] = ""
+
+    for i in range(len(s), 0, -1):
+        if s[i - 1] == "_":
+            s[i - 1] = ""
+            s[i] = s[i].upper()
+    s[0] = s[0].upper()
+
+    return "".join(s)
+
+
+def remove_suffix(string: str, suffix):
+    """
+    Remove suffix from string if its last characters are equal to
+    the suffix passed.
+    """
+    suffix_length = len(suffix) - 1
+    string_length = len(string) - 1
+    cut_off_index = string_length - suffix_length
+
+    if string_length <= suffix_length:
+        final_string = string
+
+    elif string[cut_off_index:] == suffix:
+        final_string = string[:cut_off_index]
+
+    else:
+        final_string = string
+
+    if final_string[-1] == "_":
+        final_string = final_string[:-1]
+
+    return final_string.lower()
+
+
+def create_repository(app, name):
+    """
+    This method creates a repository in the rootdir/repositories
+    directory with the name specified.
+    """
+    name = name.lower()
+    file_dir = os.path.join(app.root_path, "repositories")
+    if not os.path.exists(file_dir):
+        pathlib.Path(file_dir).mkdir(parents=True, exist_ok=True)
+    file_name = f"{name}.py"
+    repo_name = convert_to_camelcase(name)
+    model_name = remove_suffix(name, "repository")
+
+    template_string = """from core.repository import SQLBaseRepository
+from app.models import {{model_name}}
+
+
+class {{repo_name}}(SQLBaseRepository):
+    model = {{model_name}}
+
+"""
+    template = Template(template_string)
+    data = template.render(repo_name=repo_name, model_name=model_name.capitalize())
+    file = os.path.join(file_dir, file_name)
+    if not os.path.exists(file):
+        with open(file, "w") as w:
+            w.write(data)
+        add_to_init(file_dir, f"{name}", f"{repo_name}")
+    else:
+        click.echo(f"{name}.py exists")
+
+    click.echo(f"{name.capitalize()} created successfully")
+
+
+def create_model(app, name):
+    """
+    This function creates a model with the name specified. The model
+    is created in the rootdir/models directory and its autoimported
+    in the models __init__.py file.
+
+    """
+    name = name.lower()
+    file_dir = os.path.join(app.root_path, "models")
+    if not os.path.exists(file_dir):
+        pathlib.Path(file_dir).mkdir(parents=True, exist_ok=True)
+    file_name = f"{name}.py"
+    model_name = convert_to_camelcase(name)
+
+    template_string = """from core.extensions import db
+from dataclasses import dataclass
+
+
+@dataclass
+class {{model_name}}(db.Model):
+    id: int
+
+    id = db.Column(db.Integer, primary_key=True)
+
+"""
+    template = Template(template_string)
+    data = template.render(model_name=model_name)
+    file = os.path.join(file_dir, file_name)
+    if not os.path.exists(file):
+        with open(file, "w") as w:
+            w.write(data)
+
+        add_to_init(file_dir, name, model_name)
+    else:
+        click.echo(f"{name}.py exits")
+
+
+def create_controller(app, name):
+    """
+    This function creates a controller with the name specified.
+    This controller is created in the rootdir/controllers
+    directory and its autoimported in the __init__.py file
+
+    """
+    name = name.lower()
+    file_dir = os.path.join(app.root_path, "controllers")
+    root_dir_name = os.path.basename(app.root_path)
+    if not os.path.exists(file_dir):
+        pathlib.Path(file_dir).mkdir(parents=True, exist_ok=True)
+    file_name = f"{name}.py"
+    class_name = convert_to_camelcase(name)
+    repository_file_name = f"{name}_repository"
+    repository_class_name = f"{class_name}"
+
+    template_details = {
+        "repository_file_name": repository_file_name,
+        "repository_class_name": repository_class_name,
+        "root_dir_name": root_dir_name,
+        "class_name": class_name,
+    }
+    template_string = """class {{class_name}}:
 
     def index(self):
         pass
@@ -51,79 +191,21 @@ class {{model_name}}Controller:
     def create(self, data):
         pass
 
-    def show(item_id):
+    def show(self, item_id):
         pass
 
-    def update(item_id, data):
+    def update(self, item_id, data):
         pass
 
-    def delete(item_id):
+    def delete(self, item_id):
         pass
 
-        """
+    """
 
-        template = Template(template_string)
-        data = template.render(**template_details)
-        file = os.path.join(file_dir, file_name)
-        if not os.path.exists(file):
-            with open(file, "w") as w:
-                w.write(data)
-            add_to_init(file_dir, f"{name}_controller", f"{name.capitalize()}Controller")
-
-    def create_model(name):
-        file_dir = os.path.join(app.root_path, "models")
-        if not os.path.exists(file_dir):
-            pathlib.Path(file_dir).mkdir(parents=True, exist_ok=True)
-        file_name = f"{name}_model.py"
-        model_name = name.capitalize()
-
-        template_string = """from core.extensions import db
-from dataclasses import dataclass
-
-
-@dataclass
-class {{model_name}}(db.Model):
-    pass
-
-"""
-        template = Template(template_string)
-        data = template.render(model_name=model_name)
-        file = os.path.join(file_dir, file_name)
-        if not os.path.exists(file):
-            with open(file, "w") as w:
-                w.write(data)
-
-            add_to_init(file_dir, f"{name}_model", model_name)
-        else:
-            click.echo(f"{name}_model.py exits")
-
-    def create_repository(name):
-        file_dir = os.path.join(app.root_path, "repositories")
-        if not os.path.exists(file_dir):
-            pathlib.Path(file_dir).mkdir(parents=True, exist_ok=True)
-        file_name = f"{name}_repository.py"
-        model_name = name.capitalize()
-        template_string = """from core.repository import SQLBaseRepository
-from app.models import {{model_name}}
-
-class {{model_name}}Repository(SQLBaseRepository):
-    model = {{model_name}}
-
-"""
-        template = Template(template_string)
-        data = template.render(model_name=model_name)
-        file = os.path.join(file_dir, file_name)
-        if not os.path.exists(file):
-            with open(file, "w") as w:
-                w.write(data)
-            add_to_init(file_dir, f"{name}_repository", f"{name.capitalize()}Repository")
-        else:
-            click.echo(f"{name}_repository.py exists")
-
-        click.echo(f"{name.capitalize()}Repository created successfully")
-
-    def add_to_init(dir_path, file_name, class_name):
-        with open(os.path.join(dir_path, "__init__.py"), "a") as w:
-            w.write(f"from .{file_name} import {class_name}")
-
-    app.cli.add_command(gen_cli)
+    template = Template(template_string)
+    data = template.render(**template_details)
+    file = os.path.join(file_dir, file_name)
+    if not os.path.exists(file):
+        with open(file, "w") as w:
+            w.write(data)
+        add_to_init(file_dir, name, class_name)
