@@ -1,8 +1,7 @@
 import os
 
 from flask import Flask
-from app.core.extensions import db, migrate, ma
-from app.core import initialize_instance
+from core import init_app
 from werkzeug.utils import import_string
 
 APP_ROOT = os.path.join(os.path.dirname(__file__), "..")  # refers to application_top
@@ -20,5 +19,5 @@ def create_app(config="config.DevelopmentConfig"):
             cfg = import_string("config.ProductionConfig")()
         app.config.from_object(cfg)
 
-        initialize_instance(app)
+        init_app(app)
         return app

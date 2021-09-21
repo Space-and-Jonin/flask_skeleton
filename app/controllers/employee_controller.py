@@ -3,9 +3,10 @@ import uuid
 
 import pytz
 from datetime import datetime, timedelta
-from app.core import Result, Notifier
-from app.core.exceptions import AppException
-from app.core.service_interfaces import AuthServiceInterface
+from core import Result, Notifier
+from core import AppException
+
+# from core import AuthServiceInterface
 from app.models import Token
 from app.notifications import SMSNotificationHandler
 from app.repositories import EmployeeRepository, TokenRepository
@@ -18,7 +19,7 @@ class EmployeeController(Notifier):
         self,
         employee_repository: EmployeeRepository,
         token_repository: TokenRepository,
-        auth_service: AuthServiceInterface,
+        auth_service,
     ):
         self.repository = employee_repository
         self.auth_service = auth_service

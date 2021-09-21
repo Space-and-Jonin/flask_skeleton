@@ -1,6 +1,7 @@
 import os
 from flask_testing import TestCase
-from app import create_app, db
+from app import create_app
+from core.extensions import db
 from app.controllers import DistributorController, EmployeeController
 from app.repositories import DistributorRepository, EmployeeRepository, TokenRepository
 from config import Config

@@ -1,6 +1,11 @@
-from flask import Response, json, current_app
-from sqlalchemy.exc import DBAPIError
-from werkzeug.exceptions import HTTPException
+from flask import current_app
+from werkzeug.exceptions import HTTPException as WerkzeugHttpException
+
+
+class HTTPException(WerkzeugHttpException):
+    def __init__(self, status_code, description=None):
+        self.code = status_code
+        super(HTTPException, self).__init__(description=description)
 
 
 class AppExceptionCase(Exception):
@@ -15,26 +20,6 @@ class AppExceptionCase(Exception):
             f"<AppException {self.exception_case} - "
             + f"status_code = {self.status_code} - context = {self.context}"
         )
-
-
-def app_exception_handler(exc):
-    if isinstance(exc, DBAPIError):
-        return Response(
-            json.dumps(
-                {"app_exception": "Database Error", "errorMessage": exc.orig.pgerror}
-            ),
-            status=400,
-        )
-    if isinstance(exc, HTTPException):
-        return Response(
-            json.dumps({"app_exception": "HTTP Error", "errorMessage": exc.description}),
-            status=exc.code,
-        )
-    return Response(
-        json.dumps({"app_exception": exc.exception_case, "errorMessage": exc.context}),
-        status=exc.status_code,
-        mimetype="application/json",
-    )
 
 
 class AppException:

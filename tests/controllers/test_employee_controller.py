@@ -1,6 +1,6 @@
 import secrets
 from unittest import mock
-from app.core.exceptions import AppException
+from core import AppException
 from tests.utils.base_test_case import BaseTestCase
 
 

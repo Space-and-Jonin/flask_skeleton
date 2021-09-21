@@ -1,6 +1,6 @@
 from unittest import mock
 
-from app.core.exceptions import AppException
+from core import AppException
 from app.constants import EMPLOYEE_ENDPOINT
 from tests.utils.base_test_case import BaseTestCase
 from tests.utils.mock_auth_service import MockAuthService
@@ -31,7 +31,7 @@ class TestEmployeeViews(BaseTestCase):
     def create_distributor(self):
         return self.distributor_repository.create(self.distributor_data)
 
-    @mock.patch("app.core.utils.auth.jwt.decode")
+    @mock.patch("core.utils.auth.jwt.decode")
     @mock.patch(
         "app.services.keycloak_service.AuthService.get_keycloak_access_token"
     )  # noqa
@@ -62,7 +62,7 @@ class TestEmployeeViews(BaseTestCase):
             response = self.client.post(EMPLOYEE_ENDPOINT, json=employee_data)
             self.assert401(response)
 
-    @mock.patch("app.core.utils.auth.jwt.decode")
+    @mock.patch("core.utils.auth.jwt.decode")
     def test_create_required_fields(self, mock_jwt):
         mock_jwt.side_effect = self.required_roles_side_effect
         employee_data = {}
@@ -78,7 +78,7 @@ class TestEmployeeViews(BaseTestCase):
             self.assertIn("password", errors)
             self.assertIn("phone_number", errors)
 
-    @mock.patch("app.core.utils.auth.jwt.decode")
+    @mock.patch("core.utils.auth.jwt.decode")
     def test_required_roles(self, mock_jwt):
         mock_jwt.side_effect = self.no_role_side_effect
         employee_data = {}
@@ -88,7 +88,7 @@ class TestEmployeeViews(BaseTestCase):
             )
             self.assert403(response)
 
-    @mock.patch("app.core.utils.auth.jwt.decode")
+    @mock.patch("core.utils.auth.jwt.decode")
     def test_update_employee(self, mock_jwt):
         mock_jwt.side_effect = self.required_roles_side_effect
         employee = self.create_employee()
@@ -109,7 +109,7 @@ class TestEmployeeViews(BaseTestCase):
         employee_search = self.employee_repository.find_by_id(employee.id)
         self.assertEqual(employee_search.first_name, "jane")
 
-    @mock.patch("app.core.utils.auth.jwt.decode")
+    @mock.patch("core.utils.auth.jwt.decode")
     def test_show_employee(self, mock_jwt):
         mock_jwt.side_effect = self.required_roles_side_effect
         employee = self.create_employee()
@@ -124,7 +124,7 @@ class TestEmployeeViews(BaseTestCase):
             self.assert_200(response)
             self.assertEqual(response_data.get("first_name"), "john")
 
-    @mock.patch("app.core.utils.auth.jwt.decode")
+    @mock.patch("core.utils.auth.jwt.decode")
     def test_delete_employee(self, mock_jwt):
         mock_jwt.side_effect = self.required_roles_side_effect
         employee = self.create_employee()

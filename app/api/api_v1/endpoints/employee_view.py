@@ -2,8 +2,8 @@ import pinject
 from flask import Blueprint, request
 
 from app.controllers import EmployeeController
-from app.core.service_result import handle_result
-from app.core.utils import validator, auth_role
+from core import handle_result
+from core import validator, auth_role
 from app.repositories import EmployeeRepository, TokenRepository
 from app.schema import (
     EmployeeCreateSchema,

@@ -1,6 +1,6 @@
 from unittest import mock
 
-from app.core.exceptions import AppException
+from core import AppException
 from tests.utils.base_test_case import BaseTestCase
 
 
@@ -20,7 +20,7 @@ class TestDistributorViews(BaseTestCase):
         "phone_number": "0244444449",
     }
 
-    @mock.patch("app.core.utils.auth.jwt.decode")
+    @mock.patch("core.utils.auth.jwt.decode")
     def test_create_distributor(self, mock_jwt):
         mock_jwt.side_effect = self.required_roles_side_effect
         with self.client:
@@ -29,7 +29,7 @@ class TestDistributorViews(BaseTestCase):
             )
             self.assertStatus(response, 201)
 
-    @mock.patch("app.core.utils.auth.jwt.decode")
+    @mock.patch("core.utils.auth.jwt.decode")
     def test_distributor_permissions(self, mock_jwt):
         mock_jwt.side_effect = self.no_role_side_effect
         with self.client:
@@ -38,7 +38,7 @@ class TestDistributorViews(BaseTestCase):
             )
             self.assertStatus(response, 403)
 
-    @mock.patch("app.core.utils.auth.jwt.decode")
+    @mock.patch("core.utils.auth.jwt.decode")
     def test_show_distributor(self, mock_jwt):
         mock_jwt.side_effect = self.required_roles_side_effect
 
@@ -59,7 +59,7 @@ class TestDistributorViews(BaseTestCase):
                 self.employee_data.get("first_name"),
             )
 
-    @mock.patch("app.core.utils.auth.jwt.decode")
+    @mock.patch("core.utils.auth.jwt.decode")
     def test_get_all_distributors(self, mock_jwt):
         mock_jwt.side_effect = self.required_roles_side_effect
         self.distributor_repository.create(self.distributor_data)
@@ -71,7 +71,7 @@ class TestDistributorViews(BaseTestCase):
             self.assertIsInstance(data, list)
             self.assertEqual(data[0].get("name"), self.distributor_data.get("name"))
 
-    @mock.patch("app.core.utils.auth.jwt.decode")
+    @mock.patch("core.utils.auth.jwt.decode")
     def test_update_distributor(self, mock_jwt):
         mock_jwt.side_effect = self.required_roles_side_effect
         distributor_name = "sage distribution"
@@ -92,7 +92,7 @@ class TestDistributorViews(BaseTestCase):
 
         self.assertEqual(updated_distributor.name, distributor_name)
 
-    @mock.patch("app.core.utils.auth.jwt.decode")
+    @mock.patch("core.utils.auth.jwt.decode")
     def test_delete_distributor(self, mock_jwt):
         mock_jwt.side_effect = self.required_roles_side_effect
         distributor = self.distributor_repository.create(self.distributor_data)

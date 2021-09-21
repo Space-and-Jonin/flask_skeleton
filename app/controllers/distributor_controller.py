@@ -1,6 +1,6 @@
 from flask import current_app as app
-from app.core.exceptions import AppException
-from app.core.result import Result
+from core import AppException
+from core import Result
 from app.repositories.distributor_repository import DistributorRepository
 
 

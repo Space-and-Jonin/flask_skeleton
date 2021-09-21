@@ -1,7 +1,7 @@
 from sqlalchemy.exc import DBAPIError
 
-from app.core.exceptions import AppException
-from app.core.repository import SQLBaseRepository
+from core import AppException
+from core.repository import SQLBaseRepository
 from app.models import Token
 
 

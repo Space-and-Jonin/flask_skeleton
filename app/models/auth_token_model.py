@@ -3,7 +3,7 @@ import uuid
 
 from sqlalchemy import func
 
-from app import db
+from core.extensions import db
 from dataclasses import dataclass
 
 

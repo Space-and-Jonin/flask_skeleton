@@ -1,4 +1,4 @@
-from app.core.repository import SQLBaseRepository
+from core.repository import SQLBaseRepository
 from app.models import Distributor
 
 

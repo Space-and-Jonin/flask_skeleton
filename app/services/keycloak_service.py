@@ -2,10 +2,8 @@ import os
 import requests
 
 from app import constants
-from app.core.exceptions import AppException
-from app.core.service_interfaces.auth_service_interface import (
-    AuthServiceInterface,
-)
+from core import AppException
+
 
 CLIENT_ID = os.getenv("KEYCLOAK_CLIENT_ID")
 CLIENT_SECRET = os.getenv("KEYCLOAK_CLIENT_SECRET")
@@ -16,7 +14,7 @@ AUTH_ENDPOINT = "/protocol/openid-connect/token/"
 REALM_URL = "/auth/admin/realms/"
 
 
-class AuthService(AuthServiceInterface):
+class AuthService:
     headers = None
     roles = []
 

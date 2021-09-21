@@ -1,17 +1,17 @@
 import os
-import logging
 
-from flask import Flask, jsonify, has_request_context, request
-from flask.logging import default_handler
+from flask import Flask, jsonify
+from .formatter import default_handler
 from flask_mongoengine import MongoEngine
 from sqlalchemy.exc import DBAPIError
 from .extensions import db, migrate, ma
 
 from flask_swagger_ui import get_swaggerui_blueprint
 from werkzeug.exceptions import HTTPException
+from .generators import init_generators
 
 from .api_spec import spec
-from .exceptions.app_exceptions import (
+from .exceptions import (
     app_exception_handler,
     AppExceptionCase,
 )
@@ -25,33 +25,12 @@ SWAGGERUI_BLUEPRINT = get_swaggerui_blueprint(
 )
 
 
-class RequestFormatter(logging.Formatter):
-    def format(self, record):
-        if has_request_context():
-            record.url = request.url
-            record.remote_addr = request.remote_addr
-        else:
-            record.url = None
-            record.remote_addr = None
-
-        return super().format(record)
-
-
-formatter = RequestFormatter(
-    "[%(asctime)s] %(remote_addr)s requested %(url)s\n"
-    "%(levelname)s in %(module)s: %(message)s"
-)
-default_handler.setFormatter(formatter)
-default_handler.setLevel(logging.ERROR)
-default_handler.setLevel(logging.INFO)
-
-
 def initialize_instance(app: Flask):
     if not app or not isinstance(app, Flask):
         raise TypeError("Invalid Flask application instance")
 
     basedir = os.path.abspath(os.path.dirname(__file__))
-    path = os.path.join(basedir, "../instance")
+    path = os.path.join(basedir, "../app/instance")
     app.instance_path = path
     app.logger.addHandler(default_handler)
     # add extensions
@@ -73,6 +52,7 @@ def register_extensions(flask_app):
         with flask_app.app_context():
             db.create_all()
     factory.init_app(flask_app, db)
+    init_generators(flask_app)
     ma.init_app(flask_app)
 
     @flask_app.errorhandler(HTTPException)

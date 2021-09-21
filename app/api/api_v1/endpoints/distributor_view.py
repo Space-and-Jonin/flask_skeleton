@@ -4,14 +4,14 @@ from flask import Blueprint, request
 from app.controllers import DistributorController
 from app.repositories import DistributorRepository
 from app.services import RedisService
-from app.core.utils import validator, auth_role
+from core import validator, auth_role
 from app.schema import (
     DistributorSchema,
     DistributorCreateSchema,
     DistributorUpdateSchema,
     DistributorShowSchema,
 )
-from app.core.service_result import handle_result
+from core import handle_result
 
 distributor = Blueprint("distributor", __name__)
 

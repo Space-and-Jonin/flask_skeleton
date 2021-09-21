@@ -4,7 +4,7 @@ from dataclasses import dataclass
 
 from sqlalchemy.sql import func
 
-from app import db
+from core.extensions import db
 
 
 @dataclass
