@@ -1,4 +1,4 @@
-from flask import current_app
+from flask import current_app as app
 from werkzeug.exceptions import HTTPException as WerkzeugHttpException
 
 
@@ -10,7 +10,7 @@ class HTTPException(WerkzeugHttpException):
 
 class AppExceptionCase(Exception):
     def __init__(self, status_code: int, context):
-        current_app.logger.error(context)
+        app.logger.error(context)
         self.exception_case = self.__class__.__name__
         self.status_code = status_code
         self.context = context

@@ -91,20 +91,26 @@ def initialize_databases(flask_app):
         me = MongoEngine()
         me.init_app(flask_app)
     else:
-        if db_engine == "postgres":
-            engine_url_prefix = "postgresql+psycopg2"
+        db_engine_port_map = {
+            "postgres": ("postgresql+psycopg2", int(db_port) if db_port else 5432),
+            "mysql": ("mysql+pymysql", int(db_port) if db_port else 3306),
+            "oracle": ("oracle+cx_oracle", int(db_port) if db_port else 1521),
+            "mssql": ("mssql+pymssql", int(db_port) if db_port else 1433),
+            "sqlite": ("sqlite", None),
+        }
 
-        elif db_engine == "mysql":
-            engine_url_prefix = "mysql"
-
-        else:
+        if db_engine not in db_engine_port_map:
             raise DBConnectionException(f"{db_engine} connection is not supported")
 
-        db_port = int(db_port) if db_port else 5432
-        postgres_url = generate_db_url(
+        db_details = db_engine_port_map.get(db_engine)
+
+        engine_url_prefix = db_details[0]
+        db_port = db_details[1]
+        db_url = generate_db_url(
             engine_url_prefix, db_host, db_user, db_password, db_port, db_name
         )
-        app.config.from_mapping(SQLALCHEMY_DATABASE_URI=postgres_url)
+
+        app.config.from_mapping(SQLALCHEMY_DATABASE_URI=db_url)
         db.init_app(flask_app)
         migrate.init_app(flask_app, db)
         with flask_app.app_context():
@@ -114,6 +120,9 @@ def initialize_databases(flask_app):
 def generate_db_url(
     engine_prefix, db_host, db_user, db_password, db_port, db_name
 ):  # noqa
+    if engine_prefix == "sqlite":
+        return f"sqlite:///{db_name}"
+
     return (
         "{engine_prefix}://{db_user}:{password}@{host}:{port}/{db_name}".format(  # noqa
             engine_prefix=engine_prefix,
