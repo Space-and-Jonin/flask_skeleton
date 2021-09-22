@@ -1,6 +1,8 @@
 import os
 
 from flask import Flask, jsonify
+
+from .exceptions.setup_exceptions import DBConnectionException
 from .formatter import default_handler
 from flask_mongoengine import MongoEngine
 from sqlalchemy.exc import DBAPIError
@@ -43,14 +45,7 @@ def register_extensions(flask_app):
     """Register Flask extensions."""
     from .factory import factory
 
-    if flask_app.config["DB_ENGINE"] == "MONGODB":
-        me = MongoEngine()
-        me.init_app(flask_app)
-    elif flask_app.config["DB_ENGINE"] == "POSTGRES":
-        db.init_app(flask_app)
-        migrate.init_app(flask_app, db)
-        with flask_app.app_context():
-            db.create_all()
+    initialize_databases(flask_app)
     factory.init_app(flask_app, db)
     init_generators(flask_app)
     ma.init_app(flask_app)
@@ -68,6 +63,67 @@ def register_extensions(flask_app):
         return app_exception_handler(e)
 
     return None
+
+
+def initialize_databases(flask_app):
+    app = flask_app
+
+    db_host = app.config.get("DB_HOST")
+    db_name = app.config.get("DB_NAME")
+    db_user = app.config.get("DB_USER")
+    db_password = app.config.get("DB_PASSWORD")
+    db_port = app.config.get("DB_PORT")
+    db_engine = app.config.get("DB_ENGINE")
+
+    assert db_engine, "DB_ENGINE not specified"
+
+    db_engine = db_engine.lower()
+
+    if db_engine == "mongodb":
+        mongo_db_params = {
+            "MONGODB_DB": db_name,
+            "MONGODB_PORT": int(db_port) if db_port else 27017,
+            "MONGODB_USERNAME": db_user,
+            "MONGODB_PASSWORD": db_password,
+            "MONGODB_CONNECT": False,
+        }
+        app.config.from_mapping(**mongo_db_params)
+        me = MongoEngine()
+        me.init_app(flask_app)
+    else:
+        if db_engine == "postgres":
+            engine_url_prefix = "postgresql+psycopg2"
+
+        elif db_engine == "mysql":
+            engine_url_prefix = "mysql"
+
+        else:
+            raise DBConnectionException(f"{db_engine} connection is not supported")
+
+        db_port = int(db_port) if db_port else 5432
+        postgres_url = generate_db_url(
+            engine_url_prefix, db_host, db_user, db_password, db_port, db_name
+        )
+        app.config.from_mapping(SQLALCHEMY_DATABASE_URI=postgres_url)
+        db.init_app(flask_app)
+        migrate.init_app(flask_app, db)
+        with flask_app.app_context():
+            db.create_all()
+
+
+def generate_db_url(
+    engine_prefix, db_host, db_user, db_password, db_port, db_name
+):  # noqa
+    return (
+        "{engine_prefix}://{db_user}:{password}@{host}:{port}/{db_name}".format(  # noqa
+            engine_prefix=engine_prefix,
+            db_user=db_user,
+            host=db_host,
+            password=db_password,
+            port=db_port,
+            db_name=db_name,
+        )
+    )
 
 
 def register_blueprints(app):
